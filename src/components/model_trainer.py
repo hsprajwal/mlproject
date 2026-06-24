@@ -2,6 +2,8 @@ import os
 import sys
 from dataclasses import dataclass
 
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "4")
+
 from catboost import CatBoostRegressor
 from sklearn.ensemble import (
     AdaBoostRegressor,
@@ -44,11 +46,57 @@ class ModelTrainer:
                "Gradient Boosting":GradientBoostingRegressor(),
                "Linear Regression":LinearRegression(),
                "K-Neighbors Classifier":KNeighborsRegressor(),
-               "CatBoosting Classifier":CatBoostRegressor(verbose=False),
+               "CatBoosting Classifier":CatBoostRegressor(verbose=False, thread_count=1, allow_writing_files=False),
                "AdaBoost Classifier":AdaBoostRegressor()
             }
+            params={
+                "Decision Tree": {
+                    'criterion': ['squared_error', 'friedman_mse', 'absolute_error', 'poisson'],
+                    # 'splitter': ['best', 'random'],
+                    # 'max_features': ['sqrt', 'log2', None]
+                },
+                "Random Forest":{
+                    # 'crierion':['squared_error', 'friedman_mse', 'absolute_error', 'poisson'],
+                    # 'max_features':['sqrt','log2',None]
 
-            model_report:dict=evaluate_model(X_train=X_train,y_train=y_train,X_test=X_test,y_test=y_test,models=models)
+                    'n_estimators':[8,16,32,64,128,256]
+                },
+                "Gradient Boosting":{
+                    # 'loss':['squared_error', 'huber', 'absolute_error', 'quantile'],
+                    'learning_rate':[.1,.01,.05,.001],
+                    'subsample':[0.6,0.7,0.75,0.8,0.85,0.9],
+                    # 'criterion':['squared_error', 'friedman_mse'],
+                    # 'max_features':['auto','sqrt','log2'],
+                    'n_estimators':[8,16,32,64,128,256]
+                },
+                "Linear Regression":{},
+                "K-Neighbors Classifier":{
+                    'n_neighbors':[5,7,9,11],
+                    # 'weights':['uniform','distance'],
+                    # 'algorithm':['auto','ball_tree','kd_tree'],
+                },
+                "XGBRegressor":{
+                    'learning_rate':[.1,.01,.05,.001],
+                    'n_estimators':[8,16,32,64,128,256]
+
+                },
+                "CatBoosting Classifier":{
+                    'depth':[4,6],
+                    'learning_rate':[.1,.05],
+                    'iterations':[30,50]
+                },
+                "AdaBoost Classifier":{
+                    'learning_rate':[.1,.01,0.5,0.001],
+                    # 'loss':['linear','square','exponential'],
+                    'n_estimators':[8,16,32,64,128,256]
+                }
+
+
+
+
+            }
+
+            model_report:dict=evaluate_model(X_train=X_train,y_train=y_train,X_test=X_test,y_test=y_test,models=models,param=params)
 
             ## To get the best model score from the dictionary
             best_model_score=max(sorted(model_report.values()))
